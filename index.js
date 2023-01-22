@@ -5,9 +5,6 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
 
-
-
-
 require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -15,13 +12,13 @@ const axios = require("axios");
 import postcss from "postcss";
 import postcssJs from "postcss-js";
 
-const {TOKEN, SERVER_URL} = process.env;
+const {TOKEN, SERVER_URL, NOTION_KEY, NOTION_DATABASE_ID} = process.env;
 const TELEGRAM_API=`https://api.telegram.org/bot${TOKEN}`;
 const URI = `/webhook/${TOKEN}`;
 const WEBHOOK_URL = SERVER_URL+URI;
 
 
-const notion = new Client({ auth: process.env.NOTION_KEY });
+const notion = new Client({ auth: NOTION_KEY });
 
 
 
@@ -50,18 +47,17 @@ const init = async()=> {
 
 
 app.post(URI, async(req, res)=>{
-  if ('message' in req.body) {
+  //Only if there is channel post
+  if ('channel_post' in req.body) {
 
-    let t = req.body.message.text;
-    // ignore texts without props
+    let t = req.body.channel_post.text;
+    // ignore texts without props and the equals to seprate from props and blurb
     if (t.includes("===") && (t.includes("Name") || t.includes("Opportunity Type") || t.includes("Deadline") || t.includes("Website") || t.includes("YouTube Video"))) {
-      //
-      //
+
       let firstEqualIndex;
       let notionInfo = Array.from(t);
-      //
+
       notionInfo.forEach((item, index)=>{
-      //
           if(item == "=" && notionInfo[index-1] != "=") {           //first equal
             firstEqualIndex = index;
           } else if (item == "=" && notionInfo[index+1] != "=") {   //Cut equals
@@ -79,24 +75,27 @@ app.post(URI, async(req, res)=>{
 
       notionInfo = removeHttp(notionInfo);
       notionInfo = JSON.parse(toJSS(notionInfo));
-      // console.log(notionInfo);
 
       for (const key of Object.keys(notionInfo)) {
-        if(notionInfo[key].length == 0) { //null empty inputs so it can be propper for notion
+        //null empty inputs==propper for notion
+        if(notionInfo[key].length == 0) {
           notionInfo[key] = null;
         }
-        if(key=="deadline" && notionInfo[key] != null) { //make deadline propper for notoin
+
+        //deadline into ISO...propper for notoin
+        if(key=="deadline" && notionInfo[key] != null) {
           notionInfo[key] = datespaces(notionInfo[key]);
           let d = new Date(notionInfo[key]);
           d.setTime(d.getTime() - (d.getTimezoneOffset() * 60000));
           notionInfo[key] = d.toISOString().split('T')[0];
-        } else if ((key == "name" && notionInfo[key] != null) || (key == "opportunitytype" && notionInfo[key] != null)) { //name&opportunitytype propper for notion after npm package magic
+        } else if ((key == "name" && notionInfo[key] != null) || (key == "opportunitytype" && notionInfo[key] != null)) {
+          //name&opportunitytype propper for notion after postcssJs package magic
           notionInfo[key] = retrieveSpacesCaptalize(notionInfo[key]);
         }
       }
-      // console.log(notionInfo);
-      // console.log(t);
-      //DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM MESSAGE SO I TURN IT MANUALLY
+
+
+      //DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM channel_post SO I TURN IT MANUALLY
       if (!notionInfo.hasOwnProperty("name")) notionInfo["name"] = null;
       if (!notionInfo.hasOwnProperty("opportunitytype")) notionInfo["opportunitytype"] = null;
       if (!notionInfo.hasOwnProperty("deadline")) notionInfo["deadline"] = null;
@@ -153,7 +152,7 @@ function controls(notionInfo, t) {
 async function add(name, oppType, deadline, website, youVideo, blurb) {
   try {
     const response = await notion.pages.create({
-      parent:{database_id: process.env.NOTION_DATABASE_ID},
+      parent:{database_id: NOTION_DATABASE_ID},
       properties: {
         title: {
           type: "title",
@@ -203,7 +202,7 @@ async function add(name, oppType, deadline, website, youVideo, blurb) {
 async function addWODead(name, oppType, website, youtubevideo, blurb) {
   try {
     const response = await notion.pages.create({
-      parent:{database_id: process.env.NOTION_DATABASE_ID},
+      parent:{database_id: NOTION_DATABASE_ID},
       properties: {
         title: {
           type: "title",
@@ -251,7 +250,7 @@ async function addWODead(name, oppType, website, youtubevideo, blurb) {
 async function addWOOpp(name, deadline, website, youtubevideo, blurb) {
   try {
     const response = await notion.pages.create({
-      parent:{database_id: process.env.NOTION_DATABASE_ID},
+      parent:{database_id: NOTION_DATABASE_ID},
       properties: {
         title: {
           type: "title",
@@ -299,7 +298,7 @@ async function addWOOpp(name, deadline, website, youtubevideo, blurb) {
 async function addWOName(oppType, deadline, website, youtubevideo, blurb) {
   try {
     const response = await notion.pages.create({
-      parent:{database_id: process.env.NOTION_DATABASE_ID},
+      parent:{database_id: NOTION_DATABASE_ID},
       properties: {
         "Opportunity Type": {
           type: "select",
@@ -337,11 +336,11 @@ async function addWOName(oppType, deadline, website, youtubevideo, blurb) {
   }
 }
 
-//TWO NULLS
+//TWO OR MORE NULLS
 async function addWOOppDead(name, website, youtubevideo, blurb) {
   try {
     const response = await notion.pages.create({
-      parent:{database_id: process.env.NOTION_DATABASE_ID},
+      parent:{database_id: NOTION_DATABASE_ID},
       properties: {
         title: {
           type: "title",
@@ -379,7 +378,7 @@ async function addWOOppDead(name, website, youtubevideo, blurb) {
 async function addWONameDead(oppType, website, youtubevideo, blurb) {
   try {
     const response = await notion.pages.create({
-      parent:{database_id: process.env.NOTION_DATABASE_ID},
+      parent:{database_id: NOTION_DATABASE_ID},
       properties: {
         "Opportunity Type": {
           type: "select",
@@ -414,7 +413,7 @@ async function addWONameDead(oppType, website, youtubevideo, blurb) {
 async function addWONameOppDead(website, youtubevideo, blurb) {
   try {
     const response = await notion.pages.create({
-      parent:{database_id: process.env.NOTION_DATABASE_ID},
+      parent:{database_id: NOTION_DATABASE_ID},
       properties: {
         "Blurb": {
           rich_text: [{
@@ -447,14 +446,14 @@ async function addWONameOppDead(website, youtubevideo, blurb) {
 
 
 
-//THE NPM PACKAGE TRIM SPACES AND I NEED:
+//THE NPM PACKAGE TRIM SPACES AND I NEED IT:
 function retrieveSpacesCaptalize(wOSpace) {
   return (wOSpace.replace(/([A-Z])([A-Z])([a-z])|([a-z])([A-Z])/g, '$1$4 $2$3$5' )).replace(/(^\w|\s\w)/g, m => m.toUpperCase());
 } //spaces&captalizin so it can be propper for notion
 
 
 
-
+//Spaces so it can be propper for notion
 function datespaces(deadline) {
   let chars = [...deadline].reverse();
   for (let i in chars) {
@@ -464,13 +463,13 @@ function datespaces(deadline) {
           return chars.reverse().join("");
       }
   }
-} //Spaces so it can be propper for notion
+}
 
 
 
 
 
-
+// "HTTP(S)://" BUGS WITH POSTCSSJS so just trim it
 function removeHttp(notionInfo) {
   notionInfo = notionInfo.replace("Https://", "");
   notionInfo = notionInfo.replace("Http://", "");

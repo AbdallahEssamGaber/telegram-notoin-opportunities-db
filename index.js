@@ -102,8 +102,7 @@ app.post(URI, async(req, res)=>{
       if (!notionInfo.hasOwnProperty("deadline")) notionInfo["deadline"] = null;
       if (!notionInfo.hasOwnProperty("website")) notionInfo["website"] = null;
       if (!notionInfo.hasOwnProperty("youtubevideo")) notionInfo["youtubevideo"] = null;
-      // controls(notionInfo, t);
-      console.log(notionInfo);
+      controls(notionInfo, t);
 
     }
   }

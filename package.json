@@ -1,0 +1,30 @@
+{
+  "name": "telegram-notoin-opportunities-db",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AbdallahEssamGaber/telegram-notoin-opportunities-db.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AbdallahEssamGaber/telegram-notoin-opportunities-db/issues"
+  },
+  "homepage": "https://github.com/AbdallahEssamGaber/telegram-notoin-opportunities-db#readme",
+  "dependencies": {
+    "@notionhq/client": "^1.0.1",
+    "axios": "^1.2.3",
+    "body-parser": "^1.20.1",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "postcss": "^8.4.21",
+    "postcss-js": "^4.0.0"
+  }
+}

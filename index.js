@@ -459,10 +459,10 @@ function retrieveSpacesCaptalize(wOSpace) {
 
 //Spaces so it can be propper for notion DELETE TH ST RD ND
 function datespaces(deadline) {
-  deadline.replace("st", "");
-  deadline.replace("nd", "");
-  deadline.replace("rd", "");
-  deadline.replace("th", "");
+  deadline = deadline.replace("st", "");
+  deadline = deadline.replace("nd", "");
+  deadline = deadline.replace("rd", "");
+  deadline = deadline.replace("th", "");
   let chars = [...deadline].reverse();
   for (let i in chars) {
       if(i == 3) chars[3] = " "+chars[i];

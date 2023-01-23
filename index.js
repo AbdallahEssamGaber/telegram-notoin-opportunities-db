@@ -50,61 +50,61 @@ app.post(URI, async(req, res)=>{
   //Only if there is channel post
   if ('channel_post' in req.body) {
 
-    let t = req.body.channel_post.text;
-    // ignore texts without props and the equals to seprate from props and blurb
-    if (t.includes("===") && (t.includes("Name") || t.includes("Opportunity Type") || t.includes("Deadline") || t.includes("Website") || t.includes("YouTube Video"))) {
-
-      let firstEqualIndex;
-      let notionInfo = Array.from(t);
-
-      notionInfo.forEach((item, index)=>{
-          if(item == "=" && notionInfo[index-1] != "=") {           //first equal
-            firstEqualIndex = index;
-          } else if (item == "=" && notionInfo[index+1] != "=") {   //Cut equals
-            t = notionInfo.splice(index+1, (notionInfo.length-1)-(index+1)+1).join("").toString().trim();
-            notionInfo.splice(firstEqualIndex, index-firstEqualIndex+1);
-          } else if (index == notionInfo.length-1) console.log(item);
-          if (/\r|\n/.exec(item)) {
-             notionInfo[index] = `;\n`;
-           }
-        })
-      notionInfo = (notionInfo.join("").toString());
-      //special-case..work out with retrieveSpacesCaptalize() together they make space and captalize
-      notionInfo = notionInfo.replace(/(^\w|\s\w)/g, m => m.toUpperCase());
-      notionInfo = notionInfo.split(" ").join("");
-
-      notionInfo = removeHttp(notionInfo);
-      notionInfo = JSON.parse(toJSS(notionInfo));
-
-      for (const key of Object.keys(notionInfo)) {
-        //null empty inputs==propper for notion
-        if(notionInfo[key].length == 0) {
-          notionInfo[key] = null;
-        }
-
-        //deadline into ISO...propper for notoin
-        if(key=="deadline" && notionInfo[key] != null) {
-          notionInfo[key] = datespaces(notionInfo[key]);
-          let d = new Date(notionInfo[key]);
-          d.setTime(d.getTime() - (d.getTimezoneOffset() * 60000));
-          notionInfo[key] = d.toISOString().split('T')[0];
-        } else if ((key == "name" && notionInfo[key] != null) || (key == "opportunitytype" && notionInfo[key] != null)) {
-          //name&opportunitytype propper for notion after postcssJs package magic
-          notionInfo[key] = retrieveSpacesCaptalize(notionInfo[key]);
-        }
-      }
-
-
-      //DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM channel_post SO I TURN IT MANUALLY
-      if (!notionInfo.hasOwnProperty("name")) notionInfo["name"] = null;
-      if (!notionInfo.hasOwnProperty("opportunitytype")) notionInfo["opportunitytype"] = null;
-      if (!notionInfo.hasOwnProperty("deadline")) notionInfo["deadline"] = null;
-      if (!notionInfo.hasOwnProperty("website")) notionInfo["website"] = null;
-      if (!notionInfo.hasOwnProperty("youtubevideo")) notionInfo["youtubevideo"] = null;
-      controls(notionInfo, t);
-
-    }
-  }
+  //   let t = req.body.channel_post.text;
+  //   // ignore texts without props and the equals to seprate from props and blurb
+  //   if (t.includes("===") && (t.includes("Name") || t.includes("Opportunity Type") || t.includes("Deadline") || t.includes("Website") || t.includes("YouTube Video"))) {
+  //
+  //     let firstEqualIndex;
+  //     let notionInfo = Array.from(t);
+  //
+  //     notionInfo.forEach((item, index)=>{
+  //         if(item == "=" && notionInfo[index-1] != "=") {           //first equal
+  //           firstEqualIndex = index;
+  //         } else if (item == "=" && notionInfo[index+1] != "=") {   //Cut equals
+  //           t = notionInfo.splice(index+1, (notionInfo.length-1)-(index+1)+1).join("").toString().trim();
+  //           notionInfo.splice(firstEqualIndex, index-firstEqualIndex+1);
+  //         } else if (index == notionInfo.length-1) console.log(item);
+  //         if (/\r|\n/.exec(item)) {
+  //            notionInfo[index] = `;\n`;
+  //          }
+  //       })
+  //     notionInfo = (notionInfo.join("").toString());
+  //     //special-case..work out with retrieveSpacesCaptalize() together they make space and captalize
+  //     notionInfo = notionInfo.replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+  //     notionInfo = notionInfo.split(" ").join("");
+  //
+  //     notionInfo = removeHttp(notionInfo);
+  //     notionInfo = JSON.parse(toJSS(notionInfo));
+  //
+  //     for (const key of Object.keys(notionInfo)) {
+  //       //null empty inputs==propper for notion
+  //       if(notionInfo[key].length == 0) {
+  //         notionInfo[key] = null;
+  //       }
+  //
+  //       //deadline into ISO...propper for notoin
+  //       if(key=="deadline" && notionInfo[key] != null) {
+  //         notionInfo[key] = datespaces(notionInfo[key]);
+  //         let d = new Date(notionInfo[key]);
+  //         d.setTime(d.getTime() - (d.getTimezoneOffset() * 60000));
+  //         notionInfo[key] = d.toISOString().split('T')[0];
+  //       } else if ((key == "name" && notionInfo[key] != null) || (key == "opportunitytype" && notionInfo[key] != null)) {
+  //         //name&opportunitytype propper for notion after postcssJs package magic
+  //         notionInfo[key] = retrieveSpacesCaptalize(notionInfo[key]);
+  //       }
+  //     }
+  //
+  //
+  //     //DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM channel_post SO I TURN IT MANUALLY
+  //     if (!notionInfo.hasOwnProperty("name")) notionInfo["name"] = null;
+  //     if (!notionInfo.hasOwnProperty("opportunitytype")) notionInfo["opportunitytype"] = null;
+  //     if (!notionInfo.hasOwnProperty("deadline")) notionInfo["deadline"] = null;
+  //     if (!notionInfo.hasOwnProperty("website")) notionInfo["website"] = null;
+  //     if (!notionInfo.hasOwnProperty("youtubevideo")) notionInfo["youtubevideo"] = null;
+  //     controls(notionInfo, t);
+  //
+  //   }
+  // }
   return res.send()
 
 })

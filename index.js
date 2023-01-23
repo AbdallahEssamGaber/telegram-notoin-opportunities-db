@@ -84,10 +84,11 @@ app.post(URI, async(req, res)=>{
 
         //deadline into ISO...propper for notoin
         if(key=="deadline" && notionInfo[key] != null) {
-          notionInfo[key] = datespaces(notionInfo[key]);
+          notionInfo[key] = datespaces(notionInfo[key].toLowerCase());
           let d = new Date(notionInfo[key]);
           if (d.toString() === 'Invalid Date') {
-            return "Invaild Date";
+            console.error("Date Error");
+            return res.send();
           }
           d.setTime(d.getTime() - (d.getTimezoneOffset() * 60000));
           notionInfo[key] = d.toISOString().split('T')[0];
@@ -456,8 +457,12 @@ function retrieveSpacesCaptalize(wOSpace) {
 
 
 
-//Spaces so it can be propper for notion
+//Spaces so it can be propper for notion DELETE TH ST RD ND
 function datespaces(deadline) {
+  deadline.replace("st", "");
+  deadline.replace("nd", "");
+  deadline.replace("rd", "");
+  deadline.replace("th", "");
   let chars = [...deadline].reverse();
   for (let i in chars) {
       if(i == 3) chars[3] = " "+chars[i];

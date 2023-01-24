@@ -9,8 +9,7 @@ require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const axios = require("axios");
-import postcss from "postcss";
-import postcssJs from "postcss-js";
+
 
 const {TOKEN, SERVER_URL, NOTION_KEY, NOTION_DATABASE_ID} = process.env;
 const TELEGRAM_API=`https://api.telegram.org/bot${TOKEN}`;

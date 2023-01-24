@@ -50,9 +50,9 @@ const init = async()=> {
 
 app.post(URI, async(req, res)=>{
   //Only if there is channel post
-  if ('message' in req.body) {
+  if ('channel_post' in req.body) {
 
-    let t = req.body.message.text;
+    let t = req.body.channel_post.text;
     // ignore texts without props and the equals to seprate from props and blurb
     if (t.includes("===") && (t.includes("Name") || t.includes("Opportunity Type") || t.includes("Deadline") || t.includes("Website") || t.includes("YouTube Video"))) {
 
@@ -94,7 +94,7 @@ app.post(URI, async(req, res)=>{
         }
       }
 
-      //DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM message SO I TURN IT MANUALLY
+      //DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM channel_post SO I TURN IT MANUALLY
       if (!notionInfo.hasOwnProperty("name")) notionInfo["name"] = null;
       if (!notionInfo.hasOwnProperty("opportunity type")) notionInfo["opportunity type"] = null;
       if (!notionInfo.hasOwnProperty("deadline")) notionInfo["deadline"] = null;
@@ -148,7 +148,7 @@ function controls(notionInfo, t) {
 
 
 
-//DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM message SO I TURN IT MANUALLY
+//DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM channel_post SO I TURN IT MANUALLY
 async function add(name, oppType, deadline, website, youVideo, blurb) {
   try {
     const response = await notion.pages.create({

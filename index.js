@@ -31,7 +31,8 @@ function objDate(notionInfo) {
   const obj = {}
   let i = 0;
   while (i < temp.length) {
-    obj[temp[i].toLocaleLowerCase()] = temp[i + 1].trim();
+    if(i+1 == temp.length) break;
+    obj[temp[i]] = temp[i + 1].trim();
     i += 2;
   }
 
@@ -49,9 +50,9 @@ const init = async()=> {
 
 app.post(URI, async(req, res)=>{
   //Only if there is channel post
-  if ('channel_post' in req.body) {
+  if ('message' in req.body) {
 
-    let t = req.body.channel_post.text;
+    let t = req.body.message.text;
     // ignore texts without props and the equals to seprate from props and blurb
     if (t.includes("===") && (t.includes("Name") || t.includes("Opportunity Type") || t.includes("Deadline") || t.includes("Website") || t.includes("YouTube Video"))) {
 
@@ -71,7 +72,8 @@ app.post(URI, async(req, res)=>{
         })
       notionInfo = (notionInfo.join("").toString());
 
-      notionInfo = removeHttp(notionInfo);
+      notionInfo = removeHttp(notionInfo.toLocaleLowerCase());
+      notionInfo = noColon(notionInfo)
       notionInfo = objDate(notionInfo);
 
       for (const key of Object.keys(notionInfo)) {
@@ -92,12 +94,13 @@ app.post(URI, async(req, res)=>{
         }
       }
 
-      //DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM channel_post SO I TURN IT MANUALLY
+      //DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM message SO I TURN IT MANUALLY
       if (!notionInfo.hasOwnProperty("name")) notionInfo["name"] = null;
       if (!notionInfo.hasOwnProperty("opportunity type")) notionInfo["opportunity type"] = null;
       if (!notionInfo.hasOwnProperty("deadline")) notionInfo["deadline"] = null;
       if (!notionInfo.hasOwnProperty("website")) notionInfo["website"] = null;
-      if (!notionInfo.hasOwnProperty("youtubevideo")) notionInfo["youtubevideo"] = null;
+      if (!notionInfo.hasOwnProperty("youtube video")) notionInfo["youtube video"] = null;
+
       controls(notionInfo, t);
 
     }
@@ -120,32 +123,32 @@ app.listen(process.env.PORT || 5000, async ()=>{
 //CONTROL THE ADDs
 function controls(notionInfo, t) {
   if (notionInfo["name"] != null && notionInfo["opportunity type"] != null && notionInfo["deadline"] != null) {
-    add(notionInfo["name"], notionInfo["opportunity type"], notionInfo["deadline"], notionInfo["website"], notionInfo["youtubevideo"], t);
+    add(notionInfo["name"], notionInfo["opportunity type"], notionInfo["deadline"], notionInfo["website"], notionInfo["youtube video"], t);
   }
   else if (notionInfo["name"] != null && notionInfo["opportunity type"] != null && notionInfo["deadline"] == null) {
-    addWODead(notionInfo["name"], notionInfo["opportunity type"], notionInfo["website"], notionInfo["youtubevideo"], t);
+    addWODead(notionInfo["name"], notionInfo["opportunity type"], notionInfo["website"], notionInfo["youtube video"], t);
   }
   else if (notionInfo["name"] != null && notionInfo["opportunity type"] == null && notionInfo["deadline"] != null) {
-    addWOOpp(notionInfo["name"], notionInfo["deadline"], notionInfo["website"], notionInfo["youtubevideo"], t);
+    addWOOpp(notionInfo["name"], notionInfo["deadline"], notionInfo["website"], notionInfo["youtube video"], t);
   }
   else if (notionInfo["name"] == null && notionInfo["opportunity type"] != null && notionInfo["deadline"] != null) {
-    addWOName(notionInfo["opportunity type"], notionInfo["deadline"], notionInfo["website"], notionInfo["youtubevideo"], t);
+    addWOName(notionInfo["opportunity type"], notionInfo["deadline"], notionInfo["website"], notionInfo["youtube video"], t);
   }
 
   else if (notionInfo["name"] != null && notionInfo["opportunity type"] == null && notionInfo["deadline"] == null) {
-    addWOOppDead(notionInfo["name"], notionInfo["website"], notionInfo["youtubevideo"], t);
+    addWOOppDead(notionInfo["name"], notionInfo["website"], notionInfo["youtube video"], t);
   }
   else if (notionInfo["name"] == null && notionInfo["opportunity type"] != null && notionInfo["deadline"] == null) {
-    addWONameDead(notionInfo["opportunity type"], notionInfo["website"], notionInfo["youtubevideo"], t);
+    addWONameDead(notionInfo["opportunity type"], notionInfo["website"], notionInfo["youtube video"], t);
   }
   else if (notionInfo["name"] == null && notionInfo["opportunity type"] == null && notionInfo["deadline"] == null) {
-    addWONameOppDead(notionInfo["website"], notionInfo["youtubevideo"], t);
+    addWONameOppDead(notionInfo["website"], notionInfo["youtube video"], t);
   }
 }
 
 
 
-//DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM channel_post SO I TURN IT MANUALLY
+//DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM message SO I TURN IT MANUALLY
 async function add(name, oppType, deadline, website, youVideo, blurb) {
   try {
     const response = await notion.pages.create({
@@ -464,5 +467,28 @@ function removeHttp(notionInfo) {
   notionInfo = notionInfo.replace("https://", "");
   notionInfo = notionInfo.replace("http://", "");
 
+  return notionInfo
+}
+
+
+
+
+// I don't want it to throw an error if there is no : after some prop
+function noColon(notionInfo) {
+  if (notionInfo.includes("name") && !notionInfo.includes("name:")) {
+    notionInfo = notionInfo.replace("name", "name:");
+  }
+  if (notionInfo.includes("opportunity type") && !notionInfo.includes("opportunity type:")) {
+    notionInfo = notionInfo.replace("opportunity type", "opportunity type:");
+  }
+  if (notionInfo.includes("deadline") && !notionInfo.includes("deadline:")) {
+    notionInfo = notionInfo.replace("deadline", "deadline:");
+  }
+  if (notionInfo.includes("website") && !notionInfo.includes("website:")) {
+    notionInfo = notionInfo.replace("website", "website:");
+  }
+  if (notionInfo.includes("youtube video") && !notionInfo.includes("youtube video:")) {
+    notionInfo = notionInfo.replace("youtube video", "youtube video:");
+  }
   return notionInfo
 }

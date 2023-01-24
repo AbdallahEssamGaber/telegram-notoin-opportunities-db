@@ -25,18 +25,20 @@ const notion = new Client({ auth: NOTION_KEY });
 const app = express();
 app.use(bodyParser.json());
 
-function toJSSObject(cssText) {
-  const root = postcss.parse(cssText);
-  return postcssJs.objectify(root);
+
+function objDate(notionInfo) {
+  const temp = notionInfo.split(":");
+  temp.splice(-1,1) //trim the last : cuz i don't need it empty obj key
+  const obj = {}
+  let i = 0;
+  while (i < temp.length) {
+    obj[temp[i].toLocaleLowerCase()] = temp[i + 1].trim();
+    i += 2;
+  }
+
+  return obj;
 }
 
-function toJSS(cssText) {
-  try {
-    return JSON.stringify(toJSSObject(cssText), null, 2);
-  } catch (e) {
-    return "Error translating CSS to JSS";
-  }
-}
 
 
 const init = async()=> {
@@ -65,23 +67,19 @@ app.post(URI, async(req, res)=>{
             notionInfo.splice(firstEqualIndex, index-firstEqualIndex+1);
           } else if (index == notionInfo.length-1) console.log(item);
           if (/\r|\n/.exec(item)) {
-             notionInfo[index] = `;\n`;
+             notionInfo[index] = `:`; //the algo i made split by :
            }
         })
       notionInfo = (notionInfo.join("").toString());
-      //special-case..work out with retrieveSpacesCaptalize() together they make space and captalize
-      notionInfo = notionInfo.replace(/(^\w|\s\w)/g, m => m.toUpperCase());
-      notionInfo = notionInfo.split(" ").join("");
 
       notionInfo = removeHttp(notionInfo);
-      notionInfo = JSON.parse(toJSS(notionInfo));
+      notionInfo = objDate(notionInfo);
 
       for (const key of Object.keys(notionInfo)) {
         //null empty inputs==propper for notion
         if(notionInfo[key].length == 0) {
           notionInfo[key] = null;
         }
-
         //deadline into ISO...propper for notoin
         if(key=="deadline" && notionInfo[key] != null) {
           notionInfo[key] = datespaces(notionInfo[key].toLowerCase());
@@ -92,16 +90,12 @@ app.post(URI, async(req, res)=>{
           }
           d.setTime(d.getTime() - (d.getTimezoneOffset() * 60000));
           notionInfo[key] = d.toISOString().split('T')[0];
-        } else if ((key == "name" && notionInfo[key] != null) || (key == "opportunitytype" && notionInfo[key] != null)) {
-          //name&opportunitytype propper for notion after postcssJs package magic
-          notionInfo[key] = retrieveSpacesCaptalize(notionInfo[key]);
         }
       }
 
-
       //DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM channel_post SO I TURN IT MANUALLY
       if (!notionInfo.hasOwnProperty("name")) notionInfo["name"] = null;
-      if (!notionInfo.hasOwnProperty("opportunitytype")) notionInfo["opportunitytype"] = null;
+      if (!notionInfo.hasOwnProperty("opportunity type")) notionInfo["opportunity type"] = null;
       if (!notionInfo.hasOwnProperty("deadline")) notionInfo["deadline"] = null;
       if (!notionInfo.hasOwnProperty("website")) notionInfo["website"] = null;
       if (!notionInfo.hasOwnProperty("youtubevideo")) notionInfo["youtubevideo"] = null;
@@ -109,7 +103,7 @@ app.post(URI, async(req, res)=>{
 
     }
   }
-  return res.send()
+  return res.send();
 
 })
 
@@ -126,33 +120,33 @@ app.listen(process.env.PORT || 5000, async ()=>{
 
 //CONTROL THE ADDs
 function controls(notionInfo, t) {
-  if (notionInfo["name"] != null && notionInfo["opportunitytype"] != null && notionInfo["deadline"] != null) {
-    add(notionInfo["name"], notionInfo["opportunitytype"], notionInfo["deadline"], notionInfo["website"], notionInfo["youtubevideo"], t);
+  if (notionInfo["name"] != null && notionInfo["opportunity type"] != null && notionInfo["deadline"] != null) {
+    add(notionInfo["name"], notionInfo["opportunity type"], notionInfo["deadline"], notionInfo["website"], notionInfo["youtubevideo"], t);
   }
-  else if (notionInfo["name"] != null && notionInfo["opportunitytype"] != null && notionInfo["deadline"] == null) {
-    addWODead(notionInfo["name"], notionInfo["opportunitytype"], notionInfo["website"], notionInfo["youtubevideo"], t);
+  else if (notionInfo["name"] != null && notionInfo["opportunity type"] != null && notionInfo["deadline"] == null) {
+    addWODead(notionInfo["name"], notionInfo["opportunity type"], notionInfo["website"], notionInfo["youtubevideo"], t);
   }
-  else if (notionInfo["name"] != null && notionInfo["opportunitytype"] == null && notionInfo["deadline"] != null) {
+  else if (notionInfo["name"] != null && notionInfo["opportunity type"] == null && notionInfo["deadline"] != null) {
     addWOOpp(notionInfo["name"], notionInfo["deadline"], notionInfo["website"], notionInfo["youtubevideo"], t);
   }
-  else if (notionInfo["name"] == null && notionInfo["opportunitytype"] != null && notionInfo["deadline"] != null) {
-    addWOName(notionInfo["opportunitytype"], notionInfo["deadline"], notionInfo["website"], notionInfo["youtubevideo"], t);
+  else if (notionInfo["name"] == null && notionInfo["opportunity type"] != null && notionInfo["deadline"] != null) {
+    addWOName(notionInfo["opportunity type"], notionInfo["deadline"], notionInfo["website"], notionInfo["youtubevideo"], t);
   }
 
-  else if (notionInfo["name"] != null && notionInfo["opportunitytype"] == null && notionInfo["deadline"] == null) {
+  else if (notionInfo["name"] != null && notionInfo["opportunity type"] == null && notionInfo["deadline"] == null) {
     addWOOppDead(notionInfo["name"], notionInfo["website"], notionInfo["youtubevideo"], t);
   }
-  else if (notionInfo["name"] == null && notionInfo["opportunitytype"] != null && notionInfo["deadline"] == null) {
-    addWONameDead(notionInfo["opportunitytype"], notionInfo["website"], notionInfo["youtubevideo"], t);
+  else if (notionInfo["name"] == null && notionInfo["opportunity type"] != null && notionInfo["deadline"] == null) {
+    addWONameDead(notionInfo["opportunity type"], notionInfo["website"], notionInfo["youtubevideo"], t);
   }
-  else if (notionInfo["name"] == null && notionInfo["opportunitytype"] == null && notionInfo["deadline"] == null) {
+  else if (notionInfo["name"] == null && notionInfo["opportunity type"] == null && notionInfo["deadline"] == null) {
     addWONameOppDead(notionInfo["website"], notionInfo["youtubevideo"], t);
   }
 }
 
 
 
-//DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM MESSAGE SO I TURN IT MANUALLY
+//DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM channel_post SO I TURN IT MANUALLY
 async function add(name, oppType, deadline, website, youVideo, blurb) {
   try {
     const response = await notion.pages.create({
@@ -450,12 +444,6 @@ async function addWONameOppDead(website, youtubevideo, blurb) {
 
 
 
-//THE NPM PACKAGE TRIM SPACES AND I NEED IT:
-function retrieveSpacesCaptalize(wOSpace) {
-  return (wOSpace.replace(/([A-Z])([A-Z])([a-z])|([a-z])([A-Z])/g, '$1$4 $2$3$5' )).replace(/(^\w|\s\w)/g, m => m.toUpperCase());
-} //spaces&captalizin so it can be propper for notion
-
-
 
 //Spaces so it can be propper for notion DELETE TH ST RD ND
 function datespaces(deadline) {
@@ -463,21 +451,14 @@ function datespaces(deadline) {
   deadline = deadline.replace("nd", "");
   deadline = deadline.replace("rd", "");
   deadline = deadline.replace("th", "");
-  let chars = [...deadline].reverse();
-  for (let i in chars) {
-      if(i == 3) chars[3] = " "+chars[i];
-      else if (chars[i].match(/[a-z]/i)) {
-          chars[i] = chars[i]+" ";
-          return chars.reverse().join("");
-      }
-  }
+  return deadline;
 }
 
 
 
 
 
-// "HTTP(S)://" BUGS WITH POSTCSSJS so just trim it
+// "HTTP(S)://" BUGS WITH my algo so just trim it
 function removeHttp(notionInfo) {
   notionInfo = notionInfo.replace("Https://", "");
   notionInfo = notionInfo.replace("Http://", "");

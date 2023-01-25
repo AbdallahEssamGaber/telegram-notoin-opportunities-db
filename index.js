@@ -70,9 +70,10 @@ app.post(URI, async(req, res)=>{
         // notionInfo = noColon(notionInfo);
         Object.getOwnPropertyNames(mainNotoinInfo).forEach(item => {
 
-          let regex = new RegExp('opportunity type', 'i');
-          notionInfo = notionInfo.replace(regex, item+":");
-          
+          let regex = new RegExp(item, 'i');
+          if (notionInfo.match(regex) && notionInfo.match(regex)) {
+            notionInfo = notionInfo.replace(regex, item+":");
+          }
         })
         console.log(notionInfo);
         // notionInfo = removeHttp(notionInfo);

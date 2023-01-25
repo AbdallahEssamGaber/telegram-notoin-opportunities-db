@@ -50,58 +50,83 @@ const init = async()=> {
 
 app.post(URI, async(req, res)=>{
   //Only if there is channel post
-  if ('channel_post' in req.body) {
-
-    let t = req.body.channel_post.text;
+  if ('message' in req.body) {
+    let input = req.body.message.text;
     // ignore texts without props and the equals to seprate from props and blurb
-    if (t.includes("===") && (t.includes("Name") || t.includes("Opportunity Type") || t.includes("Deadline") || t.includes("Website") || t.includes("YouTube Video"))) {
+    if (input.includes("===") && (input.includes("Name") && input.includes("Opportunity Type") && input.includes("Deadline") || tinput.includes("Website") || input.includes("YouTube Video"))) {
 
-      let firstEqualIndex;
-      let notionInfo = Array.from(t);
 
-      notionInfo.forEach((item, index)=>{
-          if(item == "=" && notionInfo[index-1] != "=") {           //first equal
-            firstEqualIndex = index;
-          } else if (item == "=" && notionInfo[index+1] != "=") {   //Cut equals
-            t = notionInfo.splice(index+1, (notionInfo.length-1)-(index+1)+1).join("").toString().trim();
-            notionInfo.splice(firstEqualIndex, index-firstEqualIndex+1);
-          } else if (index == notionInfo.length-1) console.log(item);
-          if (/\r|\n/.exec(item)) {
-             notionInfo[index] = `:`; //the algo i made split by :
-           }
+      let [notionInfo, t] = input.split(input.match(/(?==)(=*)/s)[0]).reduce((sum,el,index)=>{
+        return index==0?[el]:[sum[0],sum?.[1]??""+el.replace(/(?==)(=*)/g, "")]
+        },[]);
+
+        let mainNotoinInfo = {
+          name: null,
+          'opportunity type': null,
+          deadline: null,
+          website: null,
+          'youtube video': null
+        }
+        // notionInfo = noColon(notionInfo);
+        Object.getOwnPropertyNames(mainNotoinInfo).forEach(item => {
+
+          let regex = new RegExp('opportunity type', 'i');
+          notionInfo = notionInfo.replace(regex, item+":");
+          
         })
-      notionInfo = (notionInfo.join("").toString());
-
-      notionInfo = removeHttp(notionInfo.toLocaleLowerCase());
-      notionInfo = noColon(notionInfo)
-      notionInfo = objDate(notionInfo);
-
-      for (const key of Object.keys(notionInfo)) {
-        //null empty inputs==propper for notion
-        if(notionInfo[key].length == 0) {
-          notionInfo[key] = null;
-        }
-        //deadline into ISO...propper for notoin
-        if(key=="deadline" && notionInfo[key] != null) {
-          notionInfo[key] = datespaces(notionInfo[key].toLowerCase());
-          let d = new Date(notionInfo[key]);
-          if (d.toString() === 'Invalid Date') {
-            console.error("Date Error");
-            return res.send();
-          }
-          d.setTime(d.getTime() - (d.getTimezoneOffset() * 60000));
-          notionInfo[key] = d.toISOString().split('T')[0];
-        }
-      }
-
-      //DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM channel_post SO I TURN IT MANUALLY
-      if (!notionInfo.hasOwnProperty("name")) notionInfo["name"] = null;
-      if (!notionInfo.hasOwnProperty("opportunity type")) notionInfo["opportunity type"] = null;
-      if (!notionInfo.hasOwnProperty("deadline")) notionInfo["deadline"] = null;
-      if (!notionInfo.hasOwnProperty("website")) notionInfo["website"] = null;
-      if (!notionInfo.hasOwnProperty("youtube video")) notionInfo["youtube video"] = null;
-
-      controls(notionInfo, t);
+        console.log(notionInfo);
+        // notionInfo = removeHttp(notionInfo);
+        // notionInfo = notionInfo.split(/\n/).map(item => item.length==0?false:item.split(":")).filter(Boolean);
+        //
+        // notionInfo = Object.fromEntries(notionInfo)
+        // console.log(notionInfo);
+        // ["name", "opportunity type", ]
+      // let firstEqualIndex;
+      // let notionInfo = Array.from(t);
+      //
+      // notionInfo.forEach((item, index)=>{
+      //     if(item == "=" && notionInfo[index-1] != "=") {           //first equal
+      //       firstEqualIndex = index;
+      //     } else if (item == "=" && notionInfo[index+1] != "=") {   //Cut equals
+      //       t = notionInfo.splice(index+1, (notionInfo.length-1)-(index+1)+1).join("").toString().trim();
+      //       notionInfo.splice(firstEqualIndex, index-firstEqualIndex+1);
+      //     } else if (index == notionInfo.length-1) console.log(item);
+      //     if (/\r|\n/.exec(item)) {
+      //        notionInfo[index] = `:`; //the algo i made split by :
+      //      }
+      //   })
+      // notionInfo = (notionInfo.join("").toString());
+      //
+      // notionInfo = removeHttp(notionInfo.toLocaleLowerCase());
+      // notionInfo = noColon(notionInfo)
+      // notionInfo = objDate(notionInfo);
+      //
+      // for (const key of Object.keys(notionInfo)) {
+      //   //null empty inputs==propper for notion
+      //   if(notionInfo[key].length == 0) {
+      //     notionInfo[key] = null;
+      //   }
+      //   //deadline into ISO...propper for notoin
+      //   if(key=="deadline" && notionInfo[key] != null) {
+      //     notionInfo[key] = datespaces(notionInfo[key].toLowerCase());
+      //     let d = new Date(notionInfo[key]);
+      //     if (d.toString() === 'Invalid Date') {
+      //       console.error("Date Error");
+      //       return res.send();
+      //     }
+      //     d.setTime(d.getTime() - (d.getTimezoneOffset() * 60000));
+      //     notionInfo[key] = d.toISOString().split('T')[0];
+      //   }
+      // }
+      //
+      // //DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM message SO I TURN IT MANUALLY
+      // if (!notionInfo.hasOwnProperty("name")) notionInfo["name"] = null;
+      // if (!notionInfo.hasOwnProperty("opportunity type")) notionInfo["opportunity type"] = null;
+      // if (!notionInfo.hasOwnProperty("deadline")) notionInfo["deadline"] = null;
+      // if (!notionInfo.hasOwnProperty("website")) notionInfo["website"] = null;
+      // if (!notionInfo.hasOwnProperty("youtube video")) notionInfo["youtube video"] = null;
+      //
+      // controls(notionInfo, t);
 
     }
   }
@@ -148,7 +173,7 @@ function controls(notionInfo, t) {
 
 
 
-//DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM channel_post SO I TURN IT MANUALLY
+//DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM message SO I TURN IT MANUALLY
 async function add(name, oppType, deadline, website, youVideo, blurb) {
   try {
     const response = await notion.pages.create({
@@ -206,7 +231,7 @@ async function addWODead(name, oppType, website, youtubevideo, blurb) {
       properties: {
         title: {
           type: "title",
-          title: [{
+            title: [{
               type: "text",
               text: {
                 content: name
@@ -475,20 +500,21 @@ function removeHttp(notionInfo) {
 
 // I don't want it to throw an error if there is no : after some prop
 function noColon(notionInfo) {
-  if (notionInfo.includes("name") && !notionInfo.includes("name:")) {
-    notionInfo = notionInfo.replace("name", "name:");
+  let notionInfoLowed = notionInfo.toLocaleLowerCase()
+  if (notionInfoLowed.includes("name") && !notionInfoLowed.includes("name:")) {
+    notionInfo = notionInfo.replace(/name/ig, "name:");
   }
-  if (notionInfo.includes("opportunity type") && !notionInfo.includes("opportunity type:")) {
-    notionInfo = notionInfo.replace("opportunity type", "opportunity type:");
+  if (notionInfoLowed.includes("opportunity type") && !notionInfoLowed.includes("opportunity type:")) {
+    notionInfo = notionInfo.replace(/opportunity type/ig, "opportunity type:");
   }
-  if (notionInfo.includes("deadline") && !notionInfo.includes("deadline:")) {
-    notionInfo = notionInfo.replace("deadline", "deadline:");
+  if (notionInfoLowed.includes("deadline") && !notionInfoLowed.includes("deadline:")) {
+    notionInfo = notionInfo.replace(/deadline/ig, "deadline:");
   }
-  if (notionInfo.includes("website") && !notionInfo.includes("website:")) {
-    notionInfo = notionInfo.replace("website", "website:");
+  if (notionInfoLowed.includes("website") && !notionInfoLowed.includes("website:")) {
+    notionInfo = notionInfo.replace(/website/ig, "website:");
   }
-  if (notionInfo.includes("youtube video") && !notionInfo.includes("youtube video:")) {
-    notionInfo = notionInfo.replace("youtube video", "youtube video:");
+  if (notionInfoLowed.includes("youtube video") && !notionInfoLowed.includes("youtube video:")) {
+    notionInfo = notionInfo.replace(/youtube video/ig, "youtube video:");
   }
   return notionInfo
 }

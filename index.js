@@ -36,8 +36,8 @@ const init = async()=> {
 
 app.post(URI, async(req, res)=>{
   //Only if there is channel post
-  if ('message' in req.body) {
-    let input = req.body.message.text;
+  if ('channel_post' in req.body) {
+    let input = req.body.channel_post.text;
     // ignore texts without props and the equals to seprate from props and blurb
     if (input.includes("===") && (input.includes("Name") && input.includes("Opportunity Type") && input.includes("Deadline") && (input.includes("Website") || input.includes("YouTube Video")))) {
 

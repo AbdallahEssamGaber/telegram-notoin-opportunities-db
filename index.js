@@ -25,20 +25,6 @@ const app = express();
 app.use(bodyParser.json());
 
 
-function objDate(notionInfo) {
-  const temp = notionInfo.split(":");
-  temp.splice(-1,1) //trim the last : cuz i don't need it empty obj key
-  const obj = {}
-  let i = 0;
-  while (i < temp.length) {
-    if(i+1 == temp.length) break;
-    obj[temp[i]] = temp[i + 1].trim();
-    i += 2;
-  }
-
-  return obj;
-}
-
 
 
 const init = async()=> {
@@ -53,12 +39,13 @@ app.post(URI, async(req, res)=>{
   if ('message' in req.body) {
     let input = req.body.message.text;
     // ignore texts without props and the equals to seprate from props and blurb
-    if (input.includes("===") && (input.includes("Name") && input.includes("Opportunity Type") && input.includes("Deadline") || tinput.includes("Website") || input.includes("YouTube Video"))) {
+    if (input.includes("===") && (input.includes("Name") && input.includes("Opportunity Type") && input.includes("Deadline") && (input.includes("Website") || input.includes("YouTube Video")))) {
 
-
-      let [notionInfo, t] = input.split(input.match(/(?==)(=*)/s)[0]).reduce((sum,el,index)=>{
+      //seprate blurb alone, notoinINfo alone
+      let [notionInfo, blurb] = input.split(input.match(/(?==)(=*)/s)[0]).reduce((sum,el,index)=>{
         return index==0?[el]:[sum[0],sum?.[1]??""+el.replace(/(?==)(=*)/g, "")]
         },[]);
+
 
         let mainNotoinInfo = {
           name: null,
@@ -67,67 +54,22 @@ app.post(URI, async(req, res)=>{
           website: null,
           'youtube video': null
         }
-        // notionInfo = noColon(notionInfo);
-        Object.getOwnPropertyNames(mainNotoinInfo).forEach(item => {
 
-          let regex = new RegExp(item, 'i');
-          if (notionInfo.match(regex) && notionInfo.match(regex)) {
-            notionInfo = notionInfo.replace(regex, item+":");
+        //make sure there are collons and lowcased it so it matched with the mainNotoinInfo
+        Object.getOwnPropertyNames(mainNotoinInfo).forEach(item => {
+          let keys = new RegExp(item, 'i');
+          notionInfo = notionInfo.replace(keys, item);
+          if (notionInfo.match(keys) && !notionInfo.match(new RegExp(item+":", 'i'))) {
+            notionInfo = notionInfo.replace(keys, item+":");
           }
         })
-        console.log(notionInfo);
-        // notionInfo = removeHttp(notionInfo);
-        // notionInfo = notionInfo.split(/\n/).map(item => item.length==0?false:item.split(":")).filter(Boolean);
-        //
-        // notionInfo = Object.fromEntries(notionInfo)
-        // console.log(notionInfo);
-        // ["name", "opportunity type", ]
-      // let firstEqualIndex;
-      // let notionInfo = Array.from(t);
-      //
-      // notionInfo.forEach((item, index)=>{
-      //     if(item == "=" && notionInfo[index-1] != "=") {           //first equal
-      //       firstEqualIndex = index;
-      //     } else if (item == "=" && notionInfo[index+1] != "=") {   //Cut equals
-      //       t = notionInfo.splice(index+1, (notionInfo.length-1)-(index+1)+1).join("").toString().trim();
-      //       notionInfo.splice(firstEqualIndex, index-firstEqualIndex+1);
-      //     } else if (index == notionInfo.length-1) console.log(item);
-      //     if (/\r|\n/.exec(item)) {
-      //        notionInfo[index] = `:`; //the algo i made split by :
-      //      }
-      //   })
-      // notionInfo = (notionInfo.join("").toString());
-      //
-      // notionInfo = removeHttp(notionInfo.toLocaleLowerCase());
-      // notionInfo = noColon(notionInfo)
-      // notionInfo = objDate(notionInfo);
-      //
-      // for (const key of Object.keys(notionInfo)) {
-      //   //null empty inputs==propper for notion
-      //   if(notionInfo[key].length == 0) {
-      //     notionInfo[key] = null;
-      //   }
-      //   //deadline into ISO...propper for notoin
-      //   if(key=="deadline" && notionInfo[key] != null) {
-      //     notionInfo[key] = datespaces(notionInfo[key].toLowerCase());
-      //     let d = new Date(notionInfo[key]);
-      //     if (d.toString() === 'Invalid Date') {
-      //       console.error("Date Error");
-      //       return res.send();
-      //     }
-      //     d.setTime(d.getTime() - (d.getTimezoneOffset() * 60000));
-      //     notionInfo[key] = d.toISOString().split('T')[0];
-      //   }
-      // }
-      //
-      // //DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM message SO I TURN IT MANUALLY
-      // if (!notionInfo.hasOwnProperty("name")) notionInfo["name"] = null;
-      // if (!notionInfo.hasOwnProperty("opportunity type")) notionInfo["opportunity type"] = null;
-      // if (!notionInfo.hasOwnProperty("deadline")) notionInfo["deadline"] = null;
-      // if (!notionInfo.hasOwnProperty("website")) notionInfo["website"] = null;
-      // if (!notionInfo.hasOwnProperty("youtube video")) notionInfo["youtube video"] = null;
-      //
-      // controls(notionInfo, t);
+
+
+        let NotionInfo = objectify(notionInfo, mainNotoinInfo)
+
+        NotionInfo.deadline = dateFormat(NotionInfo.deadline);
+        if (!NotionInfo.deadline) return res.send();
+        add(NotionInfo["name"], NotionInfo["opportunity type"], dateFormat(NotionInfo.deadline), NotionInfo["website"], NotionInfo["youtube video"], blurb);
 
     }
   }
@@ -144,37 +86,6 @@ app.listen(process.env.PORT || 5000, async ()=>{
 });
 
 
-
-
-//CONTROL THE ADDs
-function controls(notionInfo, t) {
-  if (notionInfo["name"] != null && notionInfo["opportunity type"] != null && notionInfo["deadline"] != null) {
-    add(notionInfo["name"], notionInfo["opportunity type"], notionInfo["deadline"], notionInfo["website"], notionInfo["youtube video"], t);
-  }
-  else if (notionInfo["name"] != null && notionInfo["opportunity type"] != null && notionInfo["deadline"] == null) {
-    addWODead(notionInfo["name"], notionInfo["opportunity type"], notionInfo["website"], notionInfo["youtube video"], t);
-  }
-  else if (notionInfo["name"] != null && notionInfo["opportunity type"] == null && notionInfo["deadline"] != null) {
-    addWOOpp(notionInfo["name"], notionInfo["deadline"], notionInfo["website"], notionInfo["youtube video"], t);
-  }
-  else if (notionInfo["name"] == null && notionInfo["opportunity type"] != null && notionInfo["deadline"] != null) {
-    addWOName(notionInfo["opportunity type"], notionInfo["deadline"], notionInfo["website"], notionInfo["youtube video"], t);
-  }
-
-  else if (notionInfo["name"] != null && notionInfo["opportunity type"] == null && notionInfo["deadline"] == null) {
-    addWOOppDead(notionInfo["name"], notionInfo["website"], notionInfo["youtube video"], t);
-  }
-  else if (notionInfo["name"] == null && notionInfo["opportunity type"] != null && notionInfo["deadline"] == null) {
-    addWONameDead(notionInfo["opportunity type"], notionInfo["website"], notionInfo["youtube video"], t);
-  }
-  else if (notionInfo["name"] == null && notionInfo["opportunity type"] == null && notionInfo["deadline"] == null) {
-    addWONameOppDead(notionInfo["website"], notionInfo["youtube video"], t);
-  }
-}
-
-
-
-//DIDN'T FIND ANY APIs EASY METHOD TO CHECK THE INPUTS IN TELEGRAM message SO I TURN IT MANUALLY
 async function add(name, oppType, deadline, website, youVideo, blurb) {
   try {
     const response = await notion.pages.create({
@@ -225,245 +136,6 @@ async function add(name, oppType, deadline, website, youVideo, blurb) {
   }
 }
 
-async function addWODead(name, oppType, website, youtubevideo, blurb) {
-  try {
-    const response = await notion.pages.create({
-      parent:{database_id: NOTION_DATABASE_ID},
-      properties: {
-        title: {
-          type: "title",
-            title: [{
-              type: "text",
-              text: {
-                content: name
-              }
-          }],
-        },
-        "Blurb": {
-          rich_text: [{
-            type: "text",
-            text: {
-              content: blurb,
-            }
-          }],
-        },
-        "Opportunity Type": {
-          type: "select",
-          select: {
-            name: oppType
-          }
-        },
-        "Deadline": {
-          type: "date",
-          date: null
-        },
-        "Website": {
-          type: "url",
-          url: website
-        },
-        "Youtube Video": {
-          type: "url",
-          url: youtubevideo
-        },
-      }
-    })
-    console.log("Success! Entry added.")
-  } catch (error) {
-    console.error(error.body)
-  }
-}
-
-async function addWOOpp(name, deadline, website, youtubevideo, blurb) {
-  try {
-    const response = await notion.pages.create({
-      parent:{database_id: NOTION_DATABASE_ID},
-      properties: {
-        title: {
-          type: "title",
-          title: [{
-              type: "text",
-              text: {
-                content: name
-              }
-          }],
-        },
-        "Blurb": {
-          rich_text: [{
-            type: "text",
-            text: {
-              content: blurb,
-            }
-          }],
-        },
-        "Opportunity Type": {
-          type: "select",
-          select: null
-        },
-        "Deadline": {
-          type: "date",
-          date: {
-            start: deadline
-          }
-        },
-        "Website": {
-          type: "url",
-          url: website
-        },
-        "Youtube Video": {
-          type: "url",
-          url: youtubevideo
-        },
-      }
-    })
-    console.log("Success! Entry added.")
-  } catch (error) {
-    console.error(error.body)
-  }
-}
-
-async function addWOName(oppType, deadline, website, youtubevideo, blurb) {
-  try {
-    const response = await notion.pages.create({
-      parent:{database_id: NOTION_DATABASE_ID},
-      properties: {
-        "Opportunity Type": {
-          type: "select",
-          select: {
-            name: oppType
-          }
-        },
-        "Blurb": {
-          rich_text: [{
-            type: "text",
-            text: {
-              content: blurb,
-            }
-          }],
-        },
-        "Deadline": {
-          type: "date",
-          date: {
-            start: deadline
-          }
-        },
-        "Website": {
-          type: "url",
-          url: website
-        },
-        "Youtube Video": {
-          type: "url",
-          url: youtubevideo
-        },
-      }
-    })
-    console.log("Success! Entry added.")
-  } catch (error) {
-    console.error(error.body)
-  }
-}
-
-//TWO OR MORE NULLS
-async function addWOOppDead(name, website, youtubevideo, blurb) {
-  try {
-    const response = await notion.pages.create({
-      parent:{database_id: NOTION_DATABASE_ID},
-      properties: {
-        title: {
-          type: "title",
-          title: [{
-              type: "text",
-              text: {
-                content: name
-              }
-          }],
-        },
-        "Blurb": {
-          rich_text: [{
-            type: "text",
-            text: {
-              content: blurb,
-            }
-          }],
-        },
-        "Website": {
-          type: "url",
-          url: website
-        },
-        "Youtube Video": {
-          type: "url",
-          url: youtubevideo
-        },
-      }
-    })
-    console.log("Success! Entry added.")
-  } catch (error) {
-    console.error(error.body)
-  }
-}
-
-async function addWONameDead(oppType, website, youtubevideo, blurb) {
-  try {
-    const response = await notion.pages.create({
-      parent:{database_id: NOTION_DATABASE_ID},
-      properties: {
-        "Opportunity Type": {
-          type: "select",
-          select: {
-            name: oppType
-          }
-        },
-        "Blurb": {
-          rich_text: [{
-            type: "text",
-            text: {
-              content: blurb,
-            }
-          }],
-        },
-        "Website": {
-          type: "url",
-          url: website
-        },
-        "Youtube Video": {
-          type: "url",
-          url: youtubevideo
-        },
-      }
-    })
-    console.log("Success! Entry added.")
-  } catch (error) {
-    console.error(error.body)
-  }
-}
-
-async function addWONameOppDead(website, youtubevideo, blurb) {
-  try {
-    const response = await notion.pages.create({
-      parent:{database_id: NOTION_DATABASE_ID},
-      properties: {
-        "Blurb": {
-          rich_text: [{
-            type: "text",
-            text: {
-              content: blurb,
-            }
-          }],
-        },
-        "Website": {
-          type: "url",
-          url: website
-        },
-        "Youtube Video": {
-          type: "url",
-          url: youtubevideo
-        },
-      }
-    })
-    console.log("Success! Entry added.")
-  } catch (error) {
-    console.error(error.body)
-  }
-}
 
 
 
@@ -499,23 +171,25 @@ function removeHttp(notionInfo) {
 
 
 
-// I don't want it to throw an error if there is no : after some prop
-function noColon(notionInfo) {
-  let notionInfoLowed = notionInfo.toLocaleLowerCase()
-  if (notionInfoLowed.includes("name") && !notionInfoLowed.includes("name:")) {
-    notionInfo = notionInfo.replace(/name/ig, "name:");
+function objectify(notionInfo, mainNotoinInfo) {
+  notionInfo = removeHttp(notionInfo);
+  //2D array
+  notionInfo = notionInfo.split(/\n/).map(item => item.length==0?false:item.split(":")).filter(Boolean);
+  //objectify everything and null non-typed props
+  let NotionInfo = {...mainNotoinInfo,...Object.fromEntries(notionInfo)};
+  return NotionInfo;
+}
+
+
+
+function dateFormat(deadline) {
+  deadline = datespaces(deadline.toLowerCase());
+  let d = new Date(deadline);
+  if (d.toString() === 'Invalid Date') {
+    console.error("Date Error");
+    return false;
   }
-  if (notionInfoLowed.includes("opportunity type") && !notionInfoLowed.includes("opportunity type:")) {
-    notionInfo = notionInfo.replace(/opportunity type/ig, "opportunity type:");
-  }
-  if (notionInfoLowed.includes("deadline") && !notionInfoLowed.includes("deadline:")) {
-    notionInfo = notionInfo.replace(/deadline/ig, "deadline:");
-  }
-  if (notionInfoLowed.includes("website") && !notionInfoLowed.includes("website:")) {
-    notionInfo = notionInfo.replace(/website/ig, "website:");
-  }
-  if (notionInfoLowed.includes("youtube video") && !notionInfoLowed.includes("youtube video:")) {
-    notionInfo = notionInfo.replace(/youtube video/ig, "youtube video:");
-  }
-  return notionInfo
+  d.setTime(d.getTime() - (d.getTimezoneOffset() * 60000));
+  deadline = d.toISOString().split('T')[0];
+  return deadline;
 }

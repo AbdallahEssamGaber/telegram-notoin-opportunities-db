@@ -35,44 +35,44 @@ const init = async()=> {
 
 
 app.post(URI, async(req, res)=>{
-//   //Only if there is channel post
-//   if ('channel_post' in req.body) {
-//     let input = req.body.channel_post.text;
-//     // ignore texts without props and the equals to seprate from props and blurb
-//     if (input.includes("===") && (input.includes("Name") && input.includes("Opportunity Type") && input.includes("Deadline") && (input.includes("Website") || input.includes("YouTube Video")))) {
+  //Only if there is channel post
+  if ('channel_post' in req.body) {
+    let input = req.body.channel_post.text;
+    // ignore texts without props and the equals to seprate from props and blurb
+    if (input.includes("===") && (input.includes("Name") && input.includes("Opportunity Type") && input.includes("Deadline") && (input.includes("Website") || input.includes("YouTube Video")))) {
 
-//       //seprate blurb alone, notoinINfo alone
-//       let [notionInfo, blurb] = input.split(input.match(/(?==)(=*)/s)[0]).reduce((sum,el,index)=>{
-//         return index==0?[el]:[sum[0],sum?.[1]??""+el.replace(/(?==)(=*)/g, "")]
-//         },[]);
-
-
-//         let mainNotoinInfo = {
-//           name: null,
-//           'opportunity type': null,
-//           deadline: null,
-//           website: null,
-//           'youtube video': null
-//         }
-
-//         //make sure there are collons and lowcased it so it matched with the mainNotoinInfo
-//         Object.getOwnPropertyNames(mainNotoinInfo).forEach(item => {
-//           let keys = new RegExp(item, 'i');
-//           notionInfo = notionInfo.replace(keys, item);
-//           if (notionInfo.match(keys) && !notionInfo.match(new RegExp(item+":", 'i'))) {
-//             notionInfo = notionInfo.replace(keys, item+":");
-//           }
-//         })
+      //seprate blurb alone, notoinINfo alone
+      let [notionInfo, blurb] = input.split(input.match(/(?==)(=*)/s)[0]).reduce((sum,el,index)=>{
+        return index==0?[el]:[sum[0],sum?.[1]??""+el.replace(/(?==)(=*)/g, "")]
+        },[]);
 
 
-//         let NotionInfo = objectify(notionInfo, mainNotoinInfo)
+        let mainNotoinInfo = {
+          name: null,
+          'opportunity type': null,
+          deadline: null,
+          website: null,
+          'youtube video': null
+        }
 
-//         NotionInfo.deadline = dateFormat(NotionInfo.deadline);
-//         if (!NotionInfo.deadline) return res.send();
-//         add(NotionInfo["name"], NotionInfo["opportunity type"], dateFormat(NotionInfo.deadline), NotionInfo["website"], NotionInfo["youtube video"], blurb);
+        //make sure there are collons and lowcased it so it matched with the mainNotoinInfo
+        Object.getOwnPropertyNames(mainNotoinInfo).forEach(item => {
+          let keys = new RegExp(item, 'i');
+          notionInfo = notionInfo.replace(keys, item);
+          if (notionInfo.match(keys) && !notionInfo.match(new RegExp(item+":", 'i'))) {
+            notionInfo = notionInfo.replace(keys, item+":");
+          }
+        })
 
-//     }
-//   }
+
+        let NotionInfo = objectify(notionInfo, mainNotoinInfo)
+
+        NotionInfo.deadline = dateFormat(NotionInfo.deadline);
+        if (!NotionInfo.deadline) return res.send();
+        add(NotionInfo["name"], NotionInfo["opportunity type"], dateFormat(NotionInfo.deadline), NotionInfo["website"], NotionInfo["youtube video"], blurb);
+
+    }
+  }
   return res.send();
 
 })
